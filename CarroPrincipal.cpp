@@ -1,70 +1,63 @@
 #include <iostream>
 #include "Carro.cpp"
 
+
+
 using namespace std;
 
-//Define o carro principal.
-class CarroPrincipal{
-    private:
-        float PosX;
-        float PosY;
-        float PosZ;
-        float Velocidade;//Armazena a velocidade atual do carro.
+class CarroPrincipal {
+private:
+    float PosX;
+    float PosY;
+    float PosZ;
+    float Velocidade;
 
-    //inicializa os membros PosX, PosY, PosZ com os valores passados como argumento.
-    public:
-        CarroPrincipal(float PosX, float PosY, float PosZ, float velocidade){
-            this->PosX = PosX;
-            this->PosY = PosY;
-            this->PosZ = PosZ;
-            this->Velocidade = velocidade;
-        }
+public:
+    CarroPrincipal(float PosX, float PosY, float PosZ, float velocidade)
+        : PosX(PosX), PosY(PosY), PosZ(PosZ), Velocidade(velocidade) {}
 
-        //Recebe a velocidade como argumento e atribui o valor à variável Velocidade. 
-        //Verifica se a velocidade ultrapassa um limite máximo de 200.0 e se é menor ou igual a zero.
-        void DefineVelo(float velocidade){
-            this->Velocidade = velocidade;
-            if (this->Velocidade > 200){
-                this->Velocidade = 200.0;
-            }
-            if (this->Velocidade <= 0.0){
-                this->Velocidade = 0.0;
-            }
+    void DefineVelo(float velocidade) {
+        Velocidade = velocidade;
+        if (Velocidade > 200.0) {
+            Velocidade = 200.0;
         }
+        if (Velocidade <= 0.0) {
+            Velocidade = 0.0;
+        }
+    }
 
-        float getPosX(){
-            return PosX;
-        }
+    const float& getPosX() const {
+        return PosX;
+    }
 
-        float getPosY(){
-            return PosY;
-        }
+    const float& getPosY() const {
+        return PosY;
+    }
 
-        float getPosZ(){
-            return PosZ;
-        }
+    const float& getPosZ() const {
+        return PosZ;
+    }
 
-        float getVelocidade(){
-            return Velocidade;
-        }
+    const float& getVelocidade() const {
+        return Velocidade;
+    }
 
-        void setPosX(float PosX){
-            this->PosX = PosX;
-        }
+    void setPosX(const float& novoPosX) {
+        PosX = novoPosX;
+    }
 
-        void setPosY(float PosY){
-            this->PosY = PosY;
-        }
+    void setPosY(const float& novoPosY) {
+        PosY = novoPosY;
+    }
 
-        void setPosZ(float PosZ){
-            this->PosZ = PosZ;
-        }
+    void setPosZ(const float& novoPosZ) {
+        PosZ = novoPosZ;
+    }
 
-        //Chama os métodos do carro para desenhar o carro principal.
-        void CriarCarro(float RotacaoPneu){
-            Carro Car = Carro(RotacaoPneu);
-            Car.desCarro(1,0,0,PosX,PosY,PosZ);
-            Car.desPneu(-0.15,0.352,0.115);
-            Car.desPneu(-0.15,0.122,0.115);
-        }
+    void CriarCarro(float RotacaoPneu) {
+        Carro Car(RotacaoPneu);
+        Car.desCarro(1, 0, 0, PosX, PosY, PosZ);
+        Car.desPneu(-0.15, 0.352, 0.115);
+        Car.desPneu(-0.15, 0.122, 0.115);
+    }
 };

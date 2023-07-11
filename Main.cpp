@@ -14,9 +14,11 @@
 #include "CarroPrincipal.cpp"
 #include "StaticObjetos.cpp"
 #include "stb_image.cpp"
+#include "Meteoros.cpp"
 
 #define FPS 30 //Limite de FPS no jogo
 #define MaxPista 25 //Quantidade máxima de faixas centrais
+#define VeloMeteoro  1.0; //Definição da velocidade que o meteoro irá percorrer o eixo z
 
 using namespace std;
 
@@ -45,7 +47,7 @@ float RotacaoSemaforo = 0.0; //Serve girar o semáforo da contagem de inicio 1-2
 float TextoX = 10;
 float TextoY = 10; 
 
-GLuint textID[10]; //Vetor dos sprites
+GLuint textID[11]; //Vetor dos sprites
 GLuint textID_velocidade[201]; //Vetor dos sprites do velocimetro
 
 
@@ -56,6 +58,7 @@ Semaforo semaforoPartida = Semaforo(30,15,13); //Criando o bloco para usar as te
 vector <Pista> VecPista; //Vetor das faixas centrais
 vector <CarroInimigo> VecCarroInimigos; //Vetor dos 5 carros inimigos
 vector <Largada> VecFaixasLargada; //Vetor da faixa de largada e chegada
+vector <Meteoro> VecMeteoro; //Vetor dos meteoros
 
 //Carregar as Texturas
 void textura(GLuint tex_id, string filePath){
@@ -96,10 +99,10 @@ void criarPista() {
     Pista faixa(0.0, 0.0, 0.0);
     faixa.CriarPista();
 
+
     glFlush();
     glutSwapBuffers();
 }
-
 
 //Instanciando os inimigos em faixa aleatoria da pista, e de forma dinâmica
 void criarCarroInimigo() {
@@ -127,11 +130,25 @@ void criarCarroInimigo() {
     }
 }
 
+//Criando a frequência da queda dos meteoros e seu espaçamento
+void criarMeteoro() {
+    for (int i = 0; i <= 100; i++) {
+        int x = i * 20;
+        int z = 0;
+        if (i % 2 == 0) {
+            z = 30;
+        } else {
+            z = 20;
+        }
+        Meteoro meteoro = Meteoro(x, 50, z, textID[9]);
+        VecMeteoro.push_back(meteoro);
+    }
+}
+
 void criarLargada() {
     Largada Largada(25, 16.5, 10.3);
     VecFaixasLargada.push_back(Largada);
 }
-
 
 void initializeGL() {
     glClearColor(0.53, 0.84, 0.90, 1.0);
@@ -140,7 +157,7 @@ void initializeGL() {
 
     glEnable(GL_TEXTURE_2D);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMPILE);
-    glGenTextures(10, textID);//Gerando na memoria a textura com seu id
+    glGenTextures(11, textID);//Gerando na memoria a textura com seu id
     
     textura(textID[0],"sprites/Start.png");
     textura(textID[1],"sprites/SinalVermelho.png");
@@ -151,6 +168,7 @@ void initializeGL() {
     textura(textID[6],"sprites/YouWin.png");
     textura(textID[7],"sprites/Deserto.jpg");
     textura(textID[8],"sprites/Largada.png");
+    textura(textID[9],"sprites/Meteoro.png");
 
 
     glGenTextures(201, textID_velocidade);//Gerando na memoria a textura da velocidade com seu id
@@ -165,15 +183,14 @@ void initializeGL() {
     criarPista();
     criarCarroInimigo();
     criarLargada();
+    criarMeteoro();
 }
-
 
 void CriarPista(){
     for (int i = 0; i < MaxPista; i++){
         VecPista[i].CriarPista();
     }
 }
-
 
 void CriarCarrosInimigos(){
     for (int i = 0; i < QtdCarrosInimigos; i++){
@@ -187,288 +204,111 @@ void CriarCarrosInimigos(){
     }
 }
 
-
 //Funcao de desenho do mundo completo, para chamar o desenho de todos os objetos, estaticos e dinâmicos
-void CriarMundo(){
+void CriarMundo() {
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-4,4,-1,1,0.9,50);
+    glFrustum(-4, 4, -1, 1, 0.9, 50);
 
     glMatrixMode(GL_MODELVIEW);
-    glViewport(0,0,1800,900);
+    glViewport(0, 0, 1800, 900);
     glLoadIdentity();
-    gluLookAt(PosXGlobalCamera, PosYGlobalCamera,PosZGlobalCamera, //posição da câmera
-              PosXApontaCamera, PosYApontaCamera,PosZApontaCamera,//Posição inicial da camera, //para onde a câmera olha
-              0, 0, 1); //para onde o topo da câmera aponta
+    gluLookAt(PosXGlobalCamera, PosYGlobalCamera, PosZGlobalCamera, PosXApontaCamera, PosYApontaCamera, PosZApontaCamera, 0, 0, 1);
 
-    ObjetosEstaticos.EstaticObjects(TextoX,TextoY,textID[7]);
-    
-    //Desenhar meu carro
+    ObjetosEstaticos.EstaticObjects(TextoX, TextoY, textID[7]);
+
     glPushMatrix();
-    glTranslatef(Jogador1.getPosX()+0.5,Jogador1.getPosY()+0.25,Jogador1.getPosZ());
-    //Mostrar a colisao
-    if (Colisao == 1){
-        glRotatef(RotacaoColisao,0,0,1);
+    glTranslatef(Jogador1.getPosX() + 0.5, Jogador1.getPosY() + 0.25, Jogador1.getPosZ());
+    if (Colisao == 1) {
+        glRotatef(RotacaoColisao, 0, 0, 1);
     }
-    glTranslatef(-0.5,-0.25,0);
+    glTranslatef(-0.5, -0.25, 0);
     Jogador1.CriarCarro(RotacaoPneu);
     glPopMatrix();
 
-    //Desenhar as 20 faixas centrais
     CriarPista();
-    //Desenhar os inimigos
     CriarCarrosInimigos();
 
-    
-    //Desenhar a faixa de largada e consequente chegada
-    for (int i = 0; i < VecFaixasLargada.size(); i++){
+    for (int i = 0; i < VecMeteoro.size(); i++) {
+        VecMeteoro[i].DesenharMeteoro();
+    }
+
+    for (int i = 0; i < VecFaixasLargada.size(); i++) {
         VecFaixasLargada[i].DesenharFaixa(textID[8]);
     }
 
-    //Verificando os "estado do jogo"(tela de menu, contagem antes de iniciar a corrida, inicio da corrida, e chegada)
-    if (Temporizador == 0){//Tela de "Press Start"
-        
-        glColor3f(1,1,1);
+    if (Temporizador == 0) {
+        glColor3f(1, 1, 1);
         glBindTexture(GL_TEXTURE_2D, textID[0]);
-        glBegin(GL_QUADS);//(0,0)
-            glTexCoord2f(0.0,0.0); glVertex3f(28,9.9,11.3);
-            glTexCoord2f(1.0,0.0); glVertex3f(32,9.9,11.3);
-            glTexCoord2f(1.0,1.0); glVertex3f(32,10,12.7);
-            glTexCoord2f(0.0,1.0); glVertex3f(28,10,12.7);
+        glBegin(GL_QUADS);
+        glTexCoord2f(0.0, 0.0); glVertex3f(28, 9.9, 11.3);
+        glTexCoord2f(1.0, 0.0); glVertex3f(32, 9.9, 11.3);
+        glTexCoord2f(1.0, 1.0); glVertex3f(32, 10, 12.7);
+        glTexCoord2f(0.0, 1.0); glVertex3f(28, 10, 12.7);
         glEnd();
         glBindTexture(GL_TEXTURE_2D, 0);
-
-    }else if (Temporizador > 1 && Temporizador < 45){//Contador "1"
+    } else if (Temporizador > 1 && Temporizador < 45) {
         semaforoPartida.CriarSemaforoPartida(RotacaoSemaforo, textID[1]);
-    }else if (Temporizador >= 45 && Temporizador < 90){//Contador "2"
+    } else if (Temporizador >= 45 && Temporizador < 90) {
         semaforoPartida.CriarSemaforoPartida(RotacaoSemaforo, textID[2]);
-    }else if (Temporizador >= 90 && Temporizador < 135){//Contador "3"
+    } else if (Temporizador >= 90 && Temporizador < 135) {
         semaforoPartida.CriarSemaforoPartida(RotacaoSemaforo, textID[3]);
-    }else if (Temporizador >= 135 && Temporizador <= 180){//"GO!"
+    } else if (Temporizador >= 135 && Temporizador <= 180) {
         semaforoPartida.CriarSemaforoPartida(RotacaoSemaforo, textID[4]);
-    }else if (Temporizador == -1){//"Perdeu"
-        glColor3f(1,1,1);
+    } else if (Temporizador == -1) {
+        glColor3f(1, 1, 1);
         glBindTexture(GL_TEXTURE_2D, textID[5]);
         glBegin(GL_QUADS);
-            glTexCoord2f(0.0,0.0); glVertex3f(27,10,11);
-            glTexCoord2f(1.0,0.0); glVertex3f(33,10,11);
-            glTexCoord2f(1.0,1.0); glVertex3f(33,10.11,12.92);
-            glTexCoord2f(0.0,1.0); glVertex3f(27,10.11,12.92);
+        glTexCoord2f(0.0, 0.0); glVertex3f(27, 10, 11);
+        glTexCoord2f(1.0, 0.0); glVertex3f(33, 10, 11);
+        glTexCoord2f(1.0, 1.0); glVertex3f(33, 10.11, 12.92);
+        glTexCoord2f(0.0, 1.0); glVertex3f(27, 10.11, 12.92);
         glEnd();
         glBindTexture(GL_TEXTURE_2D, 0);
-    }else if (Temporizador == -2){//"Ganhou"
-        glColor3f(1,1,1);
+    } else if (Temporizador == -2) {
+        glColor3f(1, 1, 1);
         glBindTexture(GL_TEXTURE_2D, textID[6]);
         glBegin(GL_QUADS);
-            glTexCoord2f(0.0,0.0); glVertex3f(27,10,11);
-            glTexCoord2f(1.0,0.0); glVertex3f(33,10,11);
-            glTexCoord2f(1.0,1.0); glVertex3f(33,10.11,12.92);
-            glTexCoord2f(0.0,1.0); glVertex3f(27,10.11,12.92);
+        glTexCoord2f(0.0, 0.0); glVertex3f(27, 10, 11);
+        glTexCoord2f(1.0, 0.0); glVertex3f(33, 10, 11);
+        glTexCoord2f(1.0, 1.0); glVertex3f(33, 10.11, 12.92);
+        glTexCoord2f(0.0, 1.0); glVertex3f(27, 10.11, 12.92);
         glEnd();
         glBindTexture(GL_TEXTURE_2D, 0);
-    }else if (Temporizador > 100){
-
+    } else if (Temporizador > 100) {
         glColor3f(1, 1, 1);
-        glBindTexture(GL_TEXTURE_2D, textID_velocidade [int(Jogador1.getVelocidade())]);
+        glBindTexture(GL_TEXTURE_2D, textID_velocidade[int(Jogador1.getVelocidade())]);
         glBegin(GL_QUADS);
-            glTexCoord2f(0.0, 0.0); glVertex3f(PosXGlobalCamera - 0.5, 10, 12.45);
-            glTexCoord2f(1.0, 0.0); glVertex3f(PosXGlobalCamera + 0.8, 10, 12.45);
-            glTexCoord2f(1.0, 1.0); glVertex3f(PosXGlobalCamera + 0.8, 10.03, 13.01);
-            glTexCoord2f(0.0, 1.0); glVertex3f(PosXGlobalCamera - 0.5, 10.03, 13.01);
+        glTexCoord2f(0.0, 0.0); glVertex3f(PosXGlobalCamera - 0.5, 10, 12.45);
+        glTexCoord2f(1.0, 0.0); glVertex3f(PosXGlobalCamera + 0.8, 10, 12.45);
+        glTexCoord2f(1.0, 1.0); glVertex3f(PosXGlobalCamera + 0.8, 10.03, 13.01);
+        glTexCoord2f(0.0, 1.0); glVertex3f(PosXGlobalCamera - 0.5, 10.03, 13.01);
         glEnd();
         glBindTexture(GL_TEXTURE_2D, 0);
-        
     }
- 
+
     glutSwapBuffers();
 }
-//Função que vai realmente fazer a movimentação das coordenadas de cada objeto para a posição desejada a cada FPS
-void ocioso(int v){
 
-
-    if (Temporizador != 0 && Temporizador > 0){
-        Temporizador ++;
+void moverMeteoro() {
+    for (int i = 0; i < VecMeteoro.size(); i ++){
+        float PosZ = VecMeteoro[i].getPosZ();
+        PosZ -= VeloMeteoro;
+        VecMeteoro[i].setPosZ(PosZ);
     }
-   
-    // Verifica se o tempo de chegada é maior que 300 e o temporizador não é -1 ou -2
-    if (Chegada > 300 && Temporizador != -1 && Temporizador != -2) {
-        
-        // Verifica se algum dos carros inimigos ultrapassou a primeira faixa de largada
-        for (int i = 0; i < VecCarroInimigos.size(); i++) {
-            if (VecFaixasLargada[0].getPosY() <= VecCarroInimigos[i].getPosY()) {
-                Temporizador = -1;
-            }
-        }
+}
 
-        // Verifica se o jogador ultrapassou a primeira faixa de largada
-        if (VecFaixasLargada[0].getPosY() <= Jogador1.getPosY()) {
-            Temporizador = -2;
-        }
-
-        // Verifica se o temporizador é igual a -1 ou -2 para determinar o resultado do jogo
-        if (Temporizador == -1 || Temporizador == -2) {
-            PosXGlobalCamera = 30.0;
-            PosXApontaCamera = 30.0;
-            glutTimerFunc(1000.0 / FPS, ocioso, 0);
-            glutPostRedisplay();
-        }
+void incrementarTemporizador() {
+    if (Temporizador != 0 && Temporizador > 0) {
+        Temporizador++;
     }
+}
 
-    if (Temporizador == 0) {
-        // Tela de "menu"
-        glutTimerFunc(1000.0 / FPS, ocioso, 0);
-        glutPostRedisplay();
-    } else if (Temporizador > 1 && Temporizador <= 45) {
-        if (Temporizador > 30) {
-            RotacaoSemaforo -= 6;
-        }
-        glutTimerFunc(1000.0 / FPS, ocioso, 0);
-        glutPostRedisplay();
-    } else if (Temporizador > 45 && Temporizador <= 90) {
-        if (Temporizador > 75) {
-            RotacaoSemaforo -= 6;
-        }
-        glutTimerFunc(1000.0 / FPS, ocioso, 0);
-        glutPostRedisplay();
-    } else if (Temporizador > 90 && Temporizador <= 135) {
-        if (Temporizador > 120) {
-            RotacaoSemaforo -= 6;
-        }
-        glutTimerFunc(1000.0 / FPS, ocioso, 0);
-        glutPostRedisplay();
-    } else if (Temporizador > 135 && Temporizador <= 180) {
-        glutTimerFunc(1000.0 / FPS, ocioso, 0);
-        glutPostRedisplay();
-    } else if (Temporizador > 180 && Temporizador <= 210) {
-        // Transição da câmera para iniciar
-        PosXGlobalCamera += (Jogador1.getPosX() - PosXGlobalCamera) / 10;
-        PosXApontaCamera += (Jogador1.getPosX() - PosXApontaCamera) / 10;
-        glutTimerFunc(1000.0 / FPS, ocioso, 0);
-        glutPostRedisplay();
+void colisao(){
 
-    } else if (Temporizador != -1 && Temporizador != -2){
-
-        // Definindo as coordenadas da textura do chão
-        // (indo de X-10 a 725, o mesmo para Y, para mudar a qtd da textura no chao,
-        // assim ela é replicada mantendo seu tamanho, e n sendo esticada se as coordenadas fossem 0 e 1 normal, que é o desejado)
-        if (Jogador1.getVelocidade() > 0) {
-            TextoX += 0.2;
-            TextoY += 0.2;
-            if (TextoX >= 15) {
-                TextoX = 10;
-            }
-            if (TextoY >= 15) {
-                TextoY = 10;
-            }
-        }
-
-        // Aqui o carro perde velocidade constantemente sempre que não está sendo apertado a tecla de ir para frente
-        Jogador1.DefineVelo(Jogador1.getVelocidade() - 0.3);
-
-        // Mantendo a posição da câmera de acordo com a posição do meu carro
-        PosXGlobalCamera = Jogador1.getPosX() + 0.5;
-        PosXApontaCamera = Jogador1.getPosX() + 0.5;
-
-        // Verificação das teclas pressionadas
-        if (Pressed_Key[0] == 1) {
-            // W - Acelera
-            Jogador1.DefineVelo(Jogador1.getVelocidade() + 1.3);
-        }
-        if (Pressed_Key[1] == 1) {
-            // A - Vai para esquerda e desacelera
-            Jogador1.setPosX(Jogador1.getPosX() - 0.07);
-            Jogador1.DefineVelo(Jogador1.getVelocidade() - 0.7);
-        }
-        if (Pressed_Key[2] == 1) {
-            // S - Desacelera
-            Jogador1.DefineVelo(Jogador1.getVelocidade() - 2.0);
-        }
-        if (Pressed_Key[3] == 1) {
-            // D - Vai para a direita e desacelera
-            Jogador1.setPosX(Jogador1.getPosX() + 0.07);
-            Jogador1.DefineVelo(Jogador1.getVelocidade() - 0.7);
-        }
-        if (Pressed_Key[4] == 1) {
-            // R - Olha para trás com a câmera
-            if (PosYApontaCamera > 0) {
-                PosYApontaCamera = PosYApontaCamera * (-1.0);
-            }
-        }
-        if (Pressed_Key[4] == 0) {
-            // R - Ao deixar de pressionar volta a olhar para o local original
-            if (PosYApontaCamera < 0) {
-                PosYApontaCamera = PosYApontaCamera * (-1.0);
-            }
-        }
-
-        // Determinar as posições finais das Faixas Centrais à medida que o meu carro se "movimenta"
-        for (int i = 0; i < MaxPista; i++) {
-            VecPista[i].DefineVelo(Jogador1.getVelocidade(), VelocidadeMaxima);
-            VecPista[i].MoverPista();
-        }
-
-        // Move a faixa de largada com velocidade relativa ao meu carro
-        for (int i = 0; i < VecFaixasLargada.size(); i++) {
-            VecFaixasLargada[i].DefineVelo(Jogador1.getVelocidade(), VelocidadeMaxima);
-            VecFaixasLargada[i].MoverFaixaChegada();
-            Chegada += VecFaixasLargada[i].getPosY() / FPS; // Verifica a distância percorrida pela faixa
-        }
-
-        // Movendo os carros inimigos com suas velocidades fixas em relação à velocidade relativa ao meu carro
-        for (int i = 0; i < QtdCarrosInimigos; i++) {
-            int veloFixa = VecCarroInimigos[i].getVeloFixa();
-            float PosX = VecCarroInimigos[i].getPosX();
-
-            // Faz uma verificação que se rand_aux cair entre 60 e 65 o carro inimigo muda de direção no deslocamento lateral
-            float rand_aux = rand() % 1000;
-            if (rand_aux >= 60 && rand_aux <= 65) {
-                VetorDir[i] = VetorDir[i] * (-1);
-            }
-
-            veloFixa += 1.5; // Os carros inimigos vão acelerando 1.5 a cada FPS, até seu limite de velocidade
-            PosX += VetorDir[i]; // Fazendo o deslocamento lateral do carro inimigo
-
-            // Verificando se o carro inimigo não sai da pista
-            if (PosX >= 33.8) {
-                VetorDir[i] = VetorDir[i] * (-1);
-                PosX = 33.75;
-            } else if (PosX <= 25.2) {
-                VetorDir[i] = VetorDir[i] * (-1);
-                PosX = 25.25;
-            }
-
-            VecCarroInimigos[i].setPosX(PosX);
-            VecCarroInimigos[i].DefineVeloFixa(veloFixa); // Vai ser somada até chegar no limite dela, feito na criação do carro
-            VecCarroInimigos[i].DefineVeloRelativa(Jogador1.getVelocidade(), VelocidadeMaxima); // Velocidade do inimigo em relação ao meu carro, fazendo-o se afastar ou se aproximar
-            VecCarroInimigos[i].MoveCar();
-        }
-
-        // Limitando a posição do Meu Carro para evitar que ele saia da pista, tenha velocidade negativa ou ultrapasse a velocidade máxima
-        if (Jogador1.getPosX() > 33.6){
-            Jogador1.setPosX(33.6);
-        }else if(Jogador1.getPosX() < 25.4){
-            Jogador1.setPosX(25.4);
-        }else if(Jogador1.getVelocidade() <= 0){
-            Jogador1.DefineVelo(0.0);
-        }else if(Jogador1.getVelocidade() > VelocidadeMaxima){
-            if(VelocidadeMaxima == 240){
-                Jogador1.DefineVelo(VelocidadeMaxima);
-            }            
-        }
-
-        //Fazendo a rotação dos pneus caso o carro esteja em movimento
-        if (RotacaoPneu < 360 && Jogador1.getVelocidade() > 0.0){
-            RotacaoPneu += 2;
-        }
-        if (RotacaoPneu >= 360){
-            RotacaoPneu = 0;
-        }
-
-        // Tratamento de colisão, verifica se o carro do jogador colidiu com algum dos carros inimigos
-        
-        // Verifica se não houve colisão anteriormente
+    // Verifica se não houve colisão anteriormente
         if (Colisao == 0) {
             // Obtém a posição do jogador
             float PosX = Jogador1.getPosX();
@@ -612,7 +452,197 @@ void ocioso(int v){
             }
         }
 
-        // Verifica se o tempo de colisão atingiu o limite
+}
+
+void teclado(){
+    // Verificação das teclas pressionadas
+        if (Pressed_Key[0] == 1) {
+            // W - Acelera
+            Jogador1.DefineVelo(Jogador1.getVelocidade() + 1.3);
+        }
+        if (Pressed_Key[1] == 1) {
+            // A - Vai para esquerda e desacelera
+            Jogador1.setPosX(Jogador1.getPosX() - 0.07);
+            Jogador1.DefineVelo(Jogador1.getVelocidade() - 0.7);
+        }
+        if (Pressed_Key[2] == 1) {
+            // S - Desacelera
+            Jogador1.DefineVelo(Jogador1.getVelocidade() - 2.0);
+        }
+        if (Pressed_Key[3] == 1) {
+            // D - Vai para a direita e desacelera
+            Jogador1.setPosX(Jogador1.getPosX() + 0.07);
+            Jogador1.DefineVelo(Jogador1.getVelocidade() - 0.7);
+        }
+        if (Pressed_Key[4] == 1) {
+            // R - Olha para trás com a câmera
+            if (PosYApontaCamera > 0) {
+                PosYApontaCamera = PosYApontaCamera * (-1.0);
+            }
+        }
+        if (Pressed_Key[4] == 0) {
+            // R - Ao deixar de pressionar volta a olhar para o local original
+            if (PosYApontaCamera < 0) {
+                PosYApontaCamera = PosYApontaCamera * (-1.0);
+            }
+        }
+}
+
+void moverPista(){
+
+        // Determinar as posições finais das Faixas Centrais à medida que o meu carro se "movimenta"
+        for (int i = 0; i < MaxPista; i++) {
+            VecPista[i].DefineVelo(Jogador1.getVelocidade(), VelocidadeMaxima);
+            VecPista[i].MoverPista();
+        }
+
+        // Move a faixa de largada com velocidade relativa ao meu carro
+        for (int i = 0; i < VecFaixasLargada.size(); i++) {
+            VecFaixasLargada[i].DefineVelo(Jogador1.getVelocidade(), VelocidadeMaxima);
+            VecFaixasLargada[i].MoverFaixaChegada();
+            Chegada += VecFaixasLargada[i].getPosY() / FPS; // Verifica a distância percorrida pela faixa
+        }
+}
+
+void CarrinhoPista(){
+    // Movendo os carros inimigos com suas velocidades fixas em relação à velocidade relativa ao meu carro
+        for (int i = 0; i < QtdCarrosInimigos; i++) {
+            int veloFixa = VecCarroInimigos[i].getVeloFixa();
+            float PosX = VecCarroInimigos[i].getPosX();
+
+            // Faz uma verificação que se rand_aux cair entre 60 e 65 o carro inimigo muda de direção no deslocamento lateral
+            float rand_aux = rand() % 1000;
+            if (rand_aux >= 60 && rand_aux <= 65) {
+                VetorDir[i] = VetorDir[i] * (-1);
+            }
+
+            veloFixa += 1.5; // Os carros inimigos vão acelerando 1.5 a cada FPS, até seu limite de velocidade
+            PosX += VetorDir[i]; // Fazendo o deslocamento lateral do carro inimigo
+
+            // Verificando se o carro inimigo não sai da pista
+            if (PosX >= 33.8) {
+                VetorDir[i] = VetorDir[i] * (-1);
+                PosX = 33.75;
+            } else if (PosX <= 25.2) {
+                VetorDir[i] = VetorDir[i] * (-1);
+                PosX = 25.25;
+            }
+
+            VecCarroInimigos[i].setPosX(PosX);
+            VecCarroInimigos[i].DefineVeloFixa(veloFixa); // Vai ser somada até chegar no limite dela, feito na criação do carro
+            VecCarroInimigos[i].DefineVeloRelativa(Jogador1.getVelocidade(), VelocidadeMaxima); // Velocidade do inimigo em relação ao meu carro, fazendo-o se afastar ou se aproximar
+            VecCarroInimigos[i].MoveCar();
+        }
+}
+
+//Função que vai realmente fazer a movimentação das coordenadas de cada objeto para a posição desejada a cada FPS
+void ocioso(int v){
+
+    incrementarTemporizador();
+    moverMeteoro();
+
+    // Verifica se o tempo de chegada é maior que 300 e o temporizador não é -1 ou -2
+    if (Chegada > 300 && Temporizador != -1 && Temporizador != -2) {
+        
+        // Verifica se algum dos carros inimigos ultrapassou a primeira faixa de largada
+        for (int i = 0; i < VecCarroInimigos.size(); i++) {
+            if (VecFaixasLargada[0].getPosY() <= VecCarroInimigos[i].getPosY()) {
+                Temporizador = -1;
+            }
+        }
+
+        // Verifica se o jogador ultrapassou a primeira faixa de largada
+        if (VecFaixasLargada[0].getPosY() <= Jogador1.getPosY()) {
+            Temporizador = -2;
+        }
+
+        // Verifica se o temporizador é igual a -1 ou -2 para determinar o resultado do jogo
+        if (Temporizador == -1 || Temporizador == -2) {
+            PosXGlobalCamera = 30.0;
+            PosXApontaCamera = 30.0;
+            glutTimerFunc(1000.0 / FPS, ocioso, 0);
+            glutPostRedisplay();
+        }
+    }
+
+    if (Temporizador == 0) {
+        glutTimerFunc(1000.0 / FPS, ocioso, 0);
+        glutPostRedisplay();
+    } else if (Temporizador > 1 && Temporizador <= 45) {
+        if (Temporizador > 30) {
+            RotacaoSemaforo -= 6;
+        }
+        glutTimerFunc(1000.0 / FPS, ocioso, 0);
+        glutPostRedisplay();
+    } else if (Temporizador > 45 && Temporizador <= 90) {
+        if (Temporizador > 75) {
+            RotacaoSemaforo -= 6;
+        }
+        glutTimerFunc(1000.0 / FPS, ocioso, 0);
+        glutPostRedisplay();
+    } else if (Temporizador > 90 && Temporizador <= 135) {
+        if (Temporizador > 120) {
+            RotacaoSemaforo -= 6;
+        }
+        glutTimerFunc(1000.0 / FPS, ocioso, 0);
+        glutPostRedisplay();
+    } else if (Temporizador > 135 && Temporizador <= 180) {
+        glutTimerFunc(1000.0 / FPS, ocioso, 0);
+        glutPostRedisplay();
+    } else if (Temporizador > 180 && Temporizador <= 210) {
+        // Transição da câmera para iniciar
+        PosXGlobalCamera += (Jogador1.getPosX() - PosXGlobalCamera) / 10;
+        PosXApontaCamera += (Jogador1.getPosX() - PosXApontaCamera) / 10;
+        glutTimerFunc(1000.0 / FPS, ocioso, 0);
+        glutPostRedisplay();
+
+    } else if (Temporizador != -1 && Temporizador != -2) {
+        // Atualiza a textura no chão
+        TextoX += 0.2;
+        TextoY += 0.2;
+        if (TextoX >= 15) {
+        TextoX = 10;
+        }
+        if (TextoY >= 15) {
+        TextoY = 10;
+        }
+
+        // Reduz a velocidade do carro quando não está acelerando
+        if (Jogador1.getVelocidade() > 0) {
+            Jogador1.DefineVelo(Jogador1.getVelocidade() - 0.3);
+        }
+
+        // Atualiza a posição da câmera de acordo com a posição do carro
+        PosXGlobalCamera = Jogador1.getPosX() + 0.5;
+        PosXApontaCamera = Jogador1.getPosX() + 0.5;
+
+        teclado();
+        moverPista();
+        CarrinhoPista();
+
+        // Limita a posição do carro para evitar que saia da pista, tenha velocidade negativa ou ultrapasse a velocidade máxima
+        if (Jogador1.getPosX() > 33.6) {
+            Jogador1.setPosX(33.6);
+        } else if (Jogador1.getPosX() < 25.4) {
+            Jogador1.setPosX(25.4);
+        } else if (Jogador1.getVelocidade() <= 0) {
+            Jogador1.DefineVelo(0.0);
+        } else if (Jogador1.getVelocidade() > VelocidadeMaxima && VelocidadeMaxima == 240) {
+            Jogador1.DefineVelo(VelocidadeMaxima);
+        }
+
+        // Faz a rotação dos pneus caso o carro esteja em movimento
+        if (RotacaoPneu < 360 && Jogador1.getVelocidade() > 0.0) {
+            RotacaoPneu += 2;
+        }
+        if (RotacaoPneu >= 360) {
+            RotacaoPneu = 0;
+        }
+
+        // Trata a colisão com carros inimigos
+        colisao();
+
+        // Reseta os valores de colisão após o tempo limite ser atingido
         if (TempoColisao >= 90) {
             RotacaoColisao = 0;
             Colisao = 0;
@@ -621,9 +651,9 @@ void ocioso(int v){
 
         // Define a posição da câmera
         glm::vec3 PosCamera(PosXGlobalCamera, PosYGlobalCamera, PosZGlobalCamera);
+
         // Configura o temporizador para chamar a função "ocioso" novamente
         glutTimerFunc(1000.0 / FPS, ocioso, 0);
-        // Atualiza a tela
         glutPostRedisplay();
 
     }
@@ -670,7 +700,6 @@ void KeyUp(unsigned char key, int x, int y){
         Pressed_Key[4] = 0;
     }
 }
-
 
 //Main
 int main(int argc, char **argv){

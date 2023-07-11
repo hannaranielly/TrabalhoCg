@@ -168,7 +168,7 @@ class Carro{
                 glVertex3f(1, 0.4, 0.3);
                 glVertex3f(1, 0.4, 0.2);
             glEnd();
-    }
+        }   
 };
 
 #endif
