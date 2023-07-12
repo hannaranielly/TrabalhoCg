@@ -15,12 +15,11 @@
 #include "StaticObjetos.cpp"
 #include "stb_image.cpp"
 #include "Meteoros.cpp"
+#include "Variaveis.h"
 
-#define FPS 30 //Limite de FPS no jogo
-#define MaxPista 25 //Quantidade máxima de faixas centrais
-#define VeloMeteoro  1.0; //Definição da velocidade que o meteoro irá percorrer o eixo z
-
-using namespace std;
+#define FPS 30 // Limite de FPS no jogo
+#define MaxPista 25 // Quantidade máxima de faixas centrais
+#define VeloMeteoro 1.0 // Definição da velocidade que o meteoro irá percorrer o eixo z
 
 int VelocidadeMaxima = 160;
 int Pressed_Key[5] = {0,0,0,0,0};//Controle de movimentacao do teclado
@@ -59,6 +58,9 @@ vector <Pista> VecPista; //Vetor das faixas centrais
 vector <CarroInimigo> VecCarroInimigos; //Vetor dos 5 carros inimigos
 vector <Largada> VecFaixasLargada; //Vetor da faixa de largada e chegada
 vector <Meteoro> VecMeteoro; //Vetor dos meteoros
+
+
+using namespace std;
 
 //Carregar as Texturas
 void textura(GLuint tex_id, string filePath){
@@ -207,36 +209,51 @@ void CriarCarrosInimigos(){
 //Funcao de desenho do mundo completo, para chamar o desenho de todos os objetos, estaticos e dinâmicos
 void CriarMundo() {
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    // Limpa o buffer de profundidade e o buffer de cor
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glFrustum(-4, 4, -1, 1, 0.9, 50);
+    // Define a matriz de projeção para criar uma perspectiva 3D usando glFrustum
 
     glMatrixMode(GL_MODELVIEW);
     glViewport(0, 0, 1800, 900);
     glLoadIdentity();
     gluLookAt(PosXGlobalCamera, PosYGlobalCamera, PosZGlobalCamera, PosXApontaCamera, PosYApontaCamera, PosZApontaCamera, 0, 0, 1);
+    // Define a matriz de visualização do modelo, especificando a posição e a direção da câmera usando gluLookAt
 
     ObjetosEstaticos.EstaticObjects(TextoX, TextoY, textID[7]);
+    // Desenha objetos estáticos chamando a função EstaticObjects da classe ObjetosEstaticos
 
     glPushMatrix();
     glTranslatef(Jogador1.getPosX() + 0.5, Jogador1.getPosY() + 0.25, Jogador1.getPosZ());
+    // Aplica uma translação para a posição do jogador
+
     if (Colisao == 1) {
         glRotatef(RotacaoColisao, 0, 0, 1);
+        // Rotaciona o jogador se houver uma colisão
     }
+
     glTranslatef(-0.5, -0.25, 0);
     Jogador1.CriarCarro(RotacaoPneu);
+    // Desenha o carro do jogador chamando a função CriarCarro da classe Jogador1
+
     glPopMatrix();
 
     CriarPista();
+    // Desenha a pista
+
     CriarCarrosInimigos();
+    // Desenha os carros inimigos
 
     for (int i = 0; i < VecMeteoro.size(); i++) {
         VecMeteoro[i].DesenharMeteoro();
+        // Desenha os meteoros presentes no vetor VecMeteoro
     }
 
     for (int i = 0; i < VecFaixasLargada.size(); i++) {
         VecFaixasLargada[i].DesenharFaixa(textID[8]);
+        // Desenha as faixas de largada presentes no vetor VecFaixasLargada
     }
 
     if (Temporizador == 0) {
@@ -249,14 +266,19 @@ void CriarMundo() {
         glTexCoord2f(0.0, 1.0); glVertex3f(28, 10, 12.7);
         glEnd();
         glBindTexture(GL_TEXTURE_2D, 0);
+        // Desenha uma textura especial quando o temporizador é igual a 0
     } else if (Temporizador > 1 && Temporizador < 45) {
         semaforoPartida.CriarSemaforoPartida(RotacaoSemaforo, textID[1]);
+        // Desenha o semáforo de partida em uma determinada posição e rotação, quando o temporizador está entre 1 e 45
     } else if (Temporizador >= 45 && Temporizador < 90) {
         semaforoPartida.CriarSemaforoPartida(RotacaoSemaforo, textID[2]);
+        // Desenha o semáforo de partida em uma determinada posição e rotação, quando o temporizador está entre 45 e 90
     } else if (Temporizador >= 90 && Temporizador < 135) {
         semaforoPartida.CriarSemaforoPartida(RotacaoSemaforo, textID[3]);
+        // Desenha o semáforo de partida em uma determinada posição e rotação, quando o temporizador está entre 90 e 135
     } else if (Temporizador >= 135 && Temporizador <= 180) {
         semaforoPartida.CriarSemaforoPartida(RotacaoSemaforo, textID[4]);
+        // Desenha o semáforo de partida em uma determinada posição e rotação, quando o temporizador está entre 135 e 180
     } else if (Temporizador == -1) {
         glColor3f(1, 1, 1);
         glBindTexture(GL_TEXTURE_2D, textID[5]);
@@ -267,6 +289,7 @@ void CriarMundo() {
         glTexCoord2f(0.0, 1.0); glVertex3f(27, 10.11, 12.92);
         glEnd();
         glBindTexture(GL_TEXTURE_2D, 0);
+        // Desenha uma textura especial quando o temporizador é igual a -1
     } else if (Temporizador == -2) {
         glColor3f(1, 1, 1);
         glBindTexture(GL_TEXTURE_2D, textID[6]);
@@ -277,6 +300,7 @@ void CriarMundo() {
         glTexCoord2f(0.0, 1.0); glVertex3f(27, 10.11, 12.92);
         glEnd();
         glBindTexture(GL_TEXTURE_2D, 0);
+        // Desenha uma textura especial quando o temporizador é igual a -2
     } else if (Temporizador > 100) {
         glColor3f(1, 1, 1);
         glBindTexture(GL_TEXTURE_2D, textID_velocidade[int(Jogador1.getVelocidade())]);
@@ -287,9 +311,11 @@ void CriarMundo() {
         glTexCoord2f(0.0, 1.0); glVertex3f(PosXGlobalCamera - 0.5, 10.03, 13.01);
         glEnd();
         glBindTexture(GL_TEXTURE_2D, 0);
+        // Desenha uma textura especial com base na velocidade do jogador quando o temporizador é maior que 100
     }
 
     glutSwapBuffers();
+    // Troca os buffers para exibir o desenho na tela
 }
 
 void moverMeteoro() {
@@ -543,7 +569,7 @@ void ocioso(int v){
 
     // Verifica se o tempo de chegada é maior que 300 e o temporizador não é -1 ou -2
     if (Chegada > 300 && Temporizador != -1 && Temporizador != -2) {
-        
+
         // Verifica se algum dos carros inimigos ultrapassou a primeira faixa de largada
         for (int i = 0; i < VecCarroInimigos.size(); i++) {
             if (VecFaixasLargada[0].getPosY() <= VecCarroInimigos[i].getPosY()) {
@@ -566,45 +592,60 @@ void ocioso(int v){
     }
 
     if (Temporizador == 0) {
-        glutTimerFunc(1000.0 / FPS, ocioso, 0);
-        glutPostRedisplay();
+    // Caso o Temporizador seja igual a 0, chama a função "ocioso" novamente após um intervalo de tempo (1000.0 / FPS) e atualiza a tela
+    glutTimerFunc(1000.0 / FPS, ocioso, 0);
+    glutPostRedisplay();
     } else if (Temporizador > 1 && Temporizador <= 45) {
+        // Caso o Temporizador esteja entre 1 e 45 (inclusive)
         if (Temporizador > 30) {
+            // Se o Temporizador for maior que 30, realiza uma ação específica, no caso, diminui o valor da variável "RotacaoSemaforo" em 6
             RotacaoSemaforo -= 6;
         }
+        // Chama a função "ocioso" novamente após um intervalo de tempo (1000.0 / FPS) e atualiza a tela
         glutTimerFunc(1000.0 / FPS, ocioso, 0);
         glutPostRedisplay();
     } else if (Temporizador > 45 && Temporizador <= 90) {
+        // Caso o Temporizador esteja entre 45 e 90 (inclusive)
         if (Temporizador > 75) {
+            // Se o Temporizador for maior que 75, realiza uma ação específica, no caso, diminui o valor da variável "RotacaoSemaforo" em 6
             RotacaoSemaforo -= 6;
         }
+        // Chama a função "ocioso" novamente após um intervalo de tempo (1000.0 / FPS) e atualiza a tela
         glutTimerFunc(1000.0 / FPS, ocioso, 0);
         glutPostRedisplay();
     } else if (Temporizador > 90 && Temporizador <= 135) {
+        // Caso o Temporizador esteja entre 90 e 135 (inclusive)
         if (Temporizador > 120) {
+            // Se o Temporizador for maior que 120, realiza uma ação específica, no caso, diminui o valor da variável "RotacaoSemaforo" em 6
             RotacaoSemaforo -= 6;
         }
+        // Chama a função "ocioso" novamente após um intervalo de tempo (1000.0 / FPS) e atualiza a tela
         glutTimerFunc(1000.0 / FPS, ocioso, 0);
         glutPostRedisplay();
     } else if (Temporizador > 135 && Temporizador <= 180) {
+        // Caso o Temporizador esteja entre 135 e 180 (inclusive)
+        // Chama a função "ocioso" novamente após um intervalo de tempo (1000.0 / FPS) e atualiza a tela
         glutTimerFunc(1000.0 / FPS, ocioso, 0);
         glutPostRedisplay();
     } else if (Temporizador > 180 && Temporizador <= 210) {
-        // Transição da câmera para iniciar
+        // Caso o Temporizador esteja entre 180 e 210 (inclusive)
+        // Realiza uma transição da câmera para a posição inicial
         PosXGlobalCamera += (Jogador1.getPosX() - PosXGlobalCamera) / 10;
         PosXApontaCamera += (Jogador1.getPosX() - PosXApontaCamera) / 10;
+        // Chama a função "ocioso" novamente após um intervalo de tempo (1000.0 / FPS) e atualiza a tela
         glutTimerFunc(1000.0 / FPS, ocioso, 0);
         glutPostRedisplay();
+    }
 
-    } else if (Temporizador != -1 && Temporizador != -2) {
+    else if (Temporizador != -1 && Temporizador != -2) {
         // Atualiza a textura no chão
         TextoX += 0.2;
         TextoY += 0.2;
         if (TextoX >= 15) {
-        TextoX = 10;
+            TextoX = 10;
         }
         if (TextoY >= 15) {
-        TextoY = 10;
+            TextoY = 10;
         }
 
         // Reduz a velocidade do carro quando não está acelerando
@@ -616,9 +657,9 @@ void ocioso(int v){
         PosXGlobalCamera = Jogador1.getPosX() + 0.5;
         PosXApontaCamera = Jogador1.getPosX() + 0.5;
 
-        teclado();
-        moverPista();
-        CarrinhoPista();
+        teclado();  // Verifica as entradas do teclado
+        moverPista();  // Move a pista
+        CarrinhoPista();  // Move o carrinho na pista
 
         // Limita a posição do carro para evitar que saia da pista, tenha velocidade negativa ou ultrapasse a velocidade máxima
         if (Jogador1.getPosX() > 33.6) {
